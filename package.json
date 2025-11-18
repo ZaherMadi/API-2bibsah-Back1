@@ -1,0 +1,17 @@
+{
+  "name": "api-2bibsah-back1",
+  "version": "1.0.0",
+  "description": "Ce repository à pour objectif de monter une API reposant sur des similitudes de Doctolib, en destinant ces outils à un public non occidentale. Ce projet sera en relation avec plusieurs élèves de M2 Développement",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
