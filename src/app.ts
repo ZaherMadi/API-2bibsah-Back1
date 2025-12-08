@@ -3,7 +3,7 @@ import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpecs from './config/swagger';
 // import routes
-import appointmentRoutes from './routes/appointment.routess';
+import appointmentRoutes from './routes/appointment.routes';
 import slotRoutes from './routes/slot.routes';
 import prescriptionRoutes from './routes/prescription.routes';
 import paymentRoutes from './routes/payment.routes';
@@ -25,7 +25,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Swagger Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 console.log(`Swagger Docs available at http://localhost:${PORT}/api-docs`);
 
