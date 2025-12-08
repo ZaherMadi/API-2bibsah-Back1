@@ -3,7 +3,7 @@ import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpecs from './config/swagger';
 // import routes
-import appointmentRoutes from './routes/appointment.routes';
+import appointmentRoutes from './routes/appointment.routess';
 import slotRoutes from './routes/slot.routes';
 import prescriptionRoutes from './routes/prescription.routes';
 import paymentRoutes from './routes/payment.routes';
@@ -17,10 +17,13 @@ import { errorMiddleware } from './middlewares/error.middleware';
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
 
+import path from 'path';
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Swagger Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
@@ -47,7 +50,7 @@ app.use('/api/stats', statsRoutes);
 
 // Root Endpoint
 app.get('/', (req: Request, res: Response) => {
-    res.send('Microservice B - Medical Appointment Manager is running. Visit /api-docs for documentation.');
+    res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 // Error Handling Middleware (Must be last)
