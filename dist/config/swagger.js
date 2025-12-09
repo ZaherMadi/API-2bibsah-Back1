@@ -4,6 +4,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const swagger_jsdoc_1 = __importDefault(require("swagger-jsdoc"));
+const path_1 = __importDefault(require("path"));
+// Determine if running from dist (production) or src (development)
+const isProduction = __dirname.includes('dist');
+const basePath = isProduction ? path_1.default.join(__dirname, '..') : path_1.default.join(__dirname, '..', '..');
 const options = {
     definition: {
         openapi: '3.0.0',
@@ -22,11 +26,9 @@ const options = {
                 description: 'Local server',
             },
             {
-                url: 'https://api-2bibsah-back1.vercel.app', // Update this with your actual Vercel URL if known, or use relative
+                url: 'https://api-2bibsah-back1.vercel.app',
                 description: 'Production server',
             },
-            // Alternatively, use a relative path if supported by the client, 
-            // but Swagger UI often prefers absolute. 
         ],
         components: {
             securitySchemes: {
@@ -43,7 +45,13 @@ const options = {
             },
         ],
     },
-    apis: ['./src/routes/*.ts', './src/controllers/*.ts'], // Path to the API docs
+    // Include both .ts and .js files to work in dev and production
+    apis: [
+        path_1.default.join(basePath, 'src', 'routes', '*.ts'),
+        path_1.default.join(basePath, 'src', 'controllers', '*.ts'),
+        path_1.default.join(basePath, 'dist', 'routes', '*.js'),
+        path_1.default.join(basePath, 'dist', 'controllers', '*.js'),
+    ],
 };
 const specs = (0, swagger_jsdoc_1.default)(options);
 exports.default = specs;

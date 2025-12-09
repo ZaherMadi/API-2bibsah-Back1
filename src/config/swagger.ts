@@ -1,4 +1,9 @@
 import swaggerJsdoc from 'swagger-jsdoc';
+import path from 'path';
+
+// Determine if running from dist (production) or src (development)
+const isProduction = __dirname.includes('dist');
+const basePath = isProduction ? path.join(__dirname, '..') : path.join(__dirname, '..', '..');
 
 const options = {
     definition: {
@@ -18,11 +23,9 @@ const options = {
                 description: 'Local server',
             },
             {
-                url: 'https://api-2bibsah-back1.vercel.app', // Update this with your actual Vercel URL if known, or use relative
+                url: 'https://api-2bibsah-back1.vercel.app',
                 description: 'Production server',
             },
-            // Alternatively, use a relative path if supported by the client, 
-            // but Swagger UI often prefers absolute. 
         ],
         components: {
             securitySchemes: {
@@ -39,7 +42,13 @@ const options = {
             },
         ],
     },
-    apis: ['./src/routes/*.ts', './src/controllers/*.ts'], // Path to the API docs
+    // Include both .ts and .js files to work in dev and production
+    apis: [
+        path.join(basePath, 'src', 'routes', '*.ts'),
+        path.join(basePath, 'src', 'controllers', '*.ts'),
+        path.join(basePath, 'dist', 'routes', '*.js'),
+        path.join(basePath, 'dist', 'controllers', '*.js'),
+    ],
 };
 
 const specs = swaggerJsdoc(options);
