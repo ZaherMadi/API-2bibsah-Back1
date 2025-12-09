@@ -1,46 +1,48 @@
 import { Request, Response, NextFunction } from 'express';
-import prisma from '../lib/prisma';
-import { Prisma } from '@prisma/client';
+import { prisma } from '../config/database';
+import { Prisma, AppointmentStatus, PaymentStatus } from '@prisma/client';
 
 export class AppointmentController {
 
     // CRITICAL: Real Transactional Logic with Prisma
     public createAppointment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        const { doctorId, start_at, reason } = req.body;
-        const userId = req.user?.id || 'mock-patient-id'; // Fallback for testing without full auth
-        const startDateTime = new Date(start_at);
+        const { doctorId, slotId, reason } = req.body;
+        const userId = req.user?.id;
+
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'Non authentifié' });
+            return;
+        }
 
         console.log(`[Transaction Start] Creating appointment for User ${userId} with Doctor ${doctorId}`);
 
         try {
             const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-                // Step 1: Check Availability & Lock Slot (if slot exists)
-                // For simplicity, we assume slots are created beforehand. 
-                // If no slot exists, we might implicitly creating one or failing.
-                // Let's check for overlapping appointments for this doctor.
-
-                const existingAppt = await tx.appointment.findFirst({
-                    where: {
-                        doctorId: doctorId,
-                        start_at: startDateTime,
-                        status: { not: 'cancelled' }
-                    }
+                // Step 1: Check and lock the slot
+                const slot = await tx.slot.findUnique({
+                    where: { id: slotId }
                 });
 
-                if (existingAppt) {
-                    throw new Error('Slot not available (Already booked)');
+                if (!slot || !slot.isAvailable || slot.isLocked) {
+                    throw new Error('Créneau non disponible');
                 }
-                console.log('[Step 1] Slot availability checked.');
+
+                // Lock the slot
+                await tx.slot.update({
+                    where: { id: slotId },
+                    data: { isLocked: true, isAvailable: false }
+                });
+                console.log('[Step 1] Slot locked.');
 
                 // Step 2: Create Appointment Record
                 const newAppointment = await tx.appointment.create({
                     data: {
+                        userId,
                         doctorId,
-                        patientId: userId,
-                        start_at: startDateTime,
-                        status: 'confirmed', // Confirmed immediately for this demo
-                        reason,
-                        paymentStatus: 'pending'
+                        slotId,
+                        startAt: slot.startAt,
+                        status: AppointmentStatus.PENDING,
+                        reason
                     }
                 });
                 console.log(`[Step 2] Appointment ${newAppointment.id} created.`);
@@ -49,8 +51,8 @@ export class AppointmentController {
                 await tx.payment.create({
                     data: {
                         appointmentId: newAppointment.id,
-                        amount: 50.00, // Standard fee
-                        status: 'pending'
+                        amount: 50.00,
+                        status: PaymentStatus.PENDING
                     }
                 });
                 console.log('[Step 3] Payment record initialized.');
@@ -60,8 +62,8 @@ export class AppointmentController {
                     data: {
                         userId: userId,
                         type: 'system',
-                        content: `Votre RDV avec ${doctorId} est confirmé pour le ${startDateTime.toLocaleString()}`,
-                        status: 'unread'
+                        title: 'Rendez-vous créé',
+                        message: `Votre RDV avec le médecin est en attente de paiement pour le ${slot.startAt.toLocaleString()}`
                     }
                 });
                 console.log('[Step 4] Notification logged.');
@@ -84,11 +86,16 @@ export class AppointmentController {
 
     public getMyAppointments = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const userId = req.user?.id || 'mock-patient-id';
+            const userId = req.user?.id;
+            if (!userId) {
+                res.status(401).json({ success: false, message: 'Non authentifié' });
+                return;
+            }
+
             const appointments = await prisma.appointment.findMany({
-                where: { patientId: userId },
-                orderBy: { start_at: 'desc' },
-                include: { doctor: true } // Include doctor details if possible
+                where: { userId },
+                orderBy: { startAt: 'desc' },
+                include: { doctor: true, slot: true }
             });
             res.json({ success: true, data: appointments });
         } catch (error) {
@@ -99,9 +106,12 @@ export class AppointmentController {
     public getAppointmentById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { id } = req.params;
-            const appointment = await prisma.appointment.findUnique({ where: { id } });
+            const appointment = await prisma.appointment.findUnique({
+                where: { id },
+                include: { doctor: true, slot: true, payment: true }
+            });
             if (!appointment) {
-                res.status(404).json({ success: false, message: 'Not found' });
+                res.status(404).json({ success: false, message: 'Rendez-vous non trouvé' });
                 return;
             }
             res.json({ success: true, data: appointment });
@@ -113,11 +123,32 @@ export class AppointmentController {
     public cancelAppointment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { id } = req.params;
-            await prisma.appointment.update({
-                where: { id },
-                data: { status: 'cancelled' }
-            });
-            res.json({ success: true, message: 'Appointment cancelled' });
+            const userId = req.user?.id;
+
+            // Verify ownership
+            const appointment = await prisma.appointment.findUnique({ where: { id } });
+            if (!appointment) {
+                res.status(404).json({ success: false, message: 'Rendez-vous non trouvé' });
+                return;
+            }
+            if (appointment.userId !== userId) {
+                res.status(403).json({ success: false, message: 'Non autorisé' });
+                return;
+            }
+
+            // Cancel appointment and release slot
+            await prisma.$transaction([
+                prisma.appointment.update({
+                    where: { id },
+                    data: { status: AppointmentStatus.CANCELLED }
+                }),
+                prisma.slot.update({
+                    where: { id: appointment.slotId },
+                    data: { isAvailable: true, isLocked: false }
+                })
+            ]);
+
+            res.json({ success: true, message: 'Rendez-vous annulé' });
         } catch (error) {
             next(error);
         }
@@ -126,11 +157,13 @@ export class AppointmentController {
     public updateAppointment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { id } = req.params;
+            const { reason } = req.body; // Only allow updating reason for now
+
             const updated = await prisma.appointment.update({
                 where: { id },
-                data: req.body
+                data: { reason }
             });
-            res.json({ success: true, message: 'Updated', data: updated });
+            res.json({ success: true, message: 'Mis à jour', data: updated });
         } catch (error) {
             next(error);
         }

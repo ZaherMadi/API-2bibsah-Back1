@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import prisma from '../lib/prisma';
+import { prisma } from '../config/database';
 
-// mergeParams: true allows access to params from parent routes (e.g., :id from /api/doctors/:id/slots)
+// mergeParams: true allows access to params from parent routes
 const router = Router({ mergeParams: true });
 
 /**
@@ -25,7 +25,7 @@ const router = Router({ mergeParams: true });
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const slots = await prisma.slot.findMany({
-            where: { isBooked: false }
+            where: { isAvailable: true }
         });
         res.json({ success: true, data: slots });
     } catch (error) {
@@ -36,13 +36,13 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 // ==================== GET SLOTS FOR A SPECIFIC DOCTOR ====================
 /**
  * @swagger
- * /api/doctors/{id}/slots:
+ * /api/slots/by-doctor/{doctorId}:
  *   get:
  *     summary: Get available slots for a specific doctor
  *     tags: [Slots]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: doctorId
  *         required: true
  *         schema:
  *           type: string
@@ -57,7 +57,7 @@ router.get('/by-doctor/:doctorId', async (req: Request<{ doctorId: string }>, re
         const slots = await prisma.slot.findMany({
             where: {
                 doctorId: doctorId,
-                isBooked: false
+                isAvailable: true
             }
         });
         res.json({ success: true, data: slots });
@@ -83,9 +83,9 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         const slot = await prisma.slot.create({
             data: {
                 doctorId,
-                start: new Date(start),
-                end: new Date(end),
-                isBooked: false
+                startAt: new Date(start),
+                endAt: new Date(end),
+                isAvailable: true
             }
         });
         res.status(201).json({ success: true, data: slot });

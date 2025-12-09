@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import prisma from '../lib/prisma';
+import { prisma } from '../config/database';
 
 const router = Router();
 
@@ -22,7 +22,12 @@ const router = Router();
  */
 router.get('/', async (req, res, next) => {
     try {
-        const userId = req.user?.id || 'mock-patient-id'; // Fallback
+        const userId = req.user?.id;
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'Non authentifié' });
+            return;
+        }
+
         const notifs = await prisma.notification.findMany({
             where: { userId },
             orderBy: { createdAt: 'desc' }
@@ -54,7 +59,7 @@ router.patch('/:id/read', async (req, res, next) => {
         const { id } = req.params;
         await prisma.notification.update({
             where: { id },
-            data: { status: 'read' }
+            data: { isRead: true }
         });
         res.json({ success: true, message: 'Marked as read' });
     } catch (error) {
