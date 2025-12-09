@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import prisma from '../lib/prisma';
 
 const router = Router();
 
@@ -19,7 +20,18 @@ const router = Router();
  *       200:
  *         description: List of notifications
  */
-router.get('/', (req, res) => res.json({ message: 'Get Notifications' }));
+router.get('/', async (req, res, next) => {
+    try {
+        const userId = req.user?.id || 'mock-patient-id'; // Fallback
+        const notifs = await prisma.notification.findMany({
+            where: { userId },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json({ success: true, data: notifs });
+    } catch (error) {
+        next(error);
+    }
+});
 
 /**
  * @swagger
@@ -37,7 +49,18 @@ router.get('/', (req, res) => res.json({ message: 'Get Notifications' }));
  *       200:
  *         description: Notification marked as read
  */
-router.patch('/:id/read', (req, res) => res.json({ message: 'Mark as read' }));
+router.patch('/:id/read', async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        await prisma.notification.update({
+            where: { id },
+            data: { status: 'read' }
+        });
+        res.json({ success: true, message: 'Marked as read' });
+    } catch (error) {
+        next(error);
+    }
+});
 
 /**
  * @swagger
@@ -49,6 +72,9 @@ router.patch('/:id/read', (req, res) => res.json({ message: 'Mark as read' }));
  *       200:
  *         description: Test notification sent
  */
-router.post('/test', (req, res) => res.json({ message: 'Test Notification' }));
+router.post('/test', async (req, res, next) => {
+    // Mock logic or create actual DB notif
+    res.json({ message: 'Test Notif' });
+});
 
 export default router;

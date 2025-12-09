@@ -23,18 +23,27 @@ import path from 'path';
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, '../public')));
+const publicPath = path.join(process.cwd(), 'public');
+console.log('Serving static files from:', publicPath);
+app.use(express.static(publicPath));
 
-// Swagger Documentation
-const CSS_URL = "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.min.css";
-
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, {
-    customCssUrl: CSS_URL,
+// Swagger Documentation - Vercel-compatible setup using CDN assets
+const swaggerOptions = {
+    customCssUrl: "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css",
     customJs: [
-        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-bundle.js",
-        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-standalone-preset.js"
+        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.min.js"
     ]
-}));
+};
+
+// For Vercel: serve swagger spec as JSON endpoint
+app.get('/api-docs/swagger.json', (req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpecs);
+});
+
+// Serve Swagger UI with CDN assets
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, swaggerOptions));
 console.log(`Swagger Docs available at http://localhost:${PORT}/api-docs`);
 
 // Routes
@@ -58,7 +67,9 @@ app.use('/api/stats', statsRoutes);
 
 // Root Endpoint
 app.get('/', (req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
+    const indexPath = path.join(process.cwd(), 'public', 'index.html');
+    console.log('Serving index.html from:', indexPath);
+    res.sendFile(indexPath);
 });
 
 // Error Handling Middleware (Must be last)

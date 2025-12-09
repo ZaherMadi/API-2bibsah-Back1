@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import prisma from '../lib/prisma';
 
 const router = Router();
 
@@ -19,7 +20,16 @@ const router = Router();
  *       200:
  *         description: List of available slots
  */
-router.get('/', (req, res) => res.json({ message: 'Slots endpoint' }));
+router.get('/', async (req, res, next) => {
+    try {
+        const slots = await prisma.slot.findMany({
+            where: { isBooked: false }
+        });
+        res.json({ success: true, data: slots });
+    } catch (error) {
+        next(error);
+    }
+});
 
 /**
  * @swagger
@@ -37,7 +47,22 @@ router.get('/', (req, res) => res.json({ message: 'Slots endpoint' }));
  *       201:
  *         description: Slots created
  */
-router.post('/', (req, res) => res.json({ message: 'Create Slot' }));
+router.post('/', async (req, res, next) => {
+    try {
+        const { doctorId, start, end } = req.body;
+        const slot = await prisma.slot.create({
+            data: {
+                doctorId,
+                start: new Date(start),
+                end: new Date(end),
+                isBooked: false
+            }
+        });
+        res.status(201).json({ success: true, data: slot });
+    } catch (error) {
+        next(error);
+    }
+});
 
 /**
  * @swagger
@@ -60,6 +85,14 @@ router.post('/', (req, res) => res.json({ message: 'Create Slot' }));
  *       200:
  *         description: Slot deleted
  */
-router.delete('/:slotId', (req, res) => res.json({ message: 'Delete Slot' }));
+router.delete('/:slotId', async (req, res, next) => {
+    try {
+        const { slotId } = req.params;
+        await prisma.slot.delete({ where: { id: slotId } });
+        res.json({ success: true, message: 'Slot deleted' });
+    } catch (error) {
+        next(error);
+    }
+});
 
 export default router;

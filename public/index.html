@@ -3,186 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2Bibsah - Trouvez votre médecin</title>
+    <title>2Bibsah - Dashboard Patient</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #e63946 0%, #f77f00 25%, #fcbf49 50%, #06a77d 75%, #023e8a 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 40px;
-            border-bottom: 4px solid #f77f00;
-            padding-bottom: 20px;
-        }
-
-        h1 {
-            color: #023e8a;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            color: #e63946;
-            font-size: 1.3em;
-            font-weight: 600;
-        }
-
-        .description {
-            background: linear-gradient(to right, #fcbf49, #f77f00);
-            padding: 20px;
-            border-radius: 15px;
-            margin: 30px 0;
-            text-align: center;
-            color: white;
-            font-size: 1.2em;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-
-        .specialites {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-top: 30px;
-        }
-
-        .specialite-card {
-            background: linear-gradient(135deg, #ffffff, #f8f9fa);
-            border: 3px solid #fcbf49;
-            border-radius: 15px;
-            padding: 25px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .specialite-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-            border-color: #f77f00;
-        }
-
-        .specialite-card .icon {
-            font-size: 3em;
-            margin-bottom: 15px;
-            display: block;
-        }
-
-        .specialite-card h3 {
-            color: #023e8a;
-            margin-bottom: 10px;
-            font-size: 1.4em;
-        }
-
-        .specialite-card p {
-            color: #555;
-            line-height: 1.6;
-        }
-
-        footer {
-            text-align: center;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 3px solid #06a77d;
-            color: #666;
-        }
-
-        .api-info {
-            background: #e8f5e9;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 30px;
-            border-left: 5px solid #06a77d;
-        }
-
-        .api-info code {
-            background: #c8e6c9;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-family: monospace;
-            display: inline-block;
-            margin: 5px 0;
-        }
-
-        .pattern {
-            background-image: 
-                repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,.05) 10px, rgba(255,255,255,.05) 20px);
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { color: #023e8a; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .card h2 { color: #e63946; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
+        .item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .item:last-child { border-bottom: none; }
+        .btn { padding: 5px 15px; background: #06a77d; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .btn:hover { background: #048a66; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #555; }
+        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
+        .status { padding: 3px 8px; border-radius: 10px; font-size: 0.8em; }
+        .status.confirmed { background: #d4edda; color: #155724; }
+        .status.pending { background: #fff3cd; color: #856404; }
     </style>
 </head>
 <body>
-    <div class="container pattern">
+    <div class="container">
         <header>
-            <h1>🌍 2Bibsah</h1>
-            <p class="subtitle">Votre plateforme de santé multiculturelle</p>
+            <div>
+                <h1>🌍 2Bibsah</h1>
+                <p>Espace Patient - Microservice B (Transactions)</p>
+            </div>
+            <a href="/api-docs" target="_blank" class="btn" style="background: #023e8a;">Voir Documentation API</a>
         </header>
 
-        <div class="description">
-            <strong>Retrouvez vos chirurgiens dentistes, pédiatres, médecins généralistes, cardiologues, dermatologues, ophtalmologues et bien plus encore!</strong>
-        </div>
+        <div class="grid">
+            <!-- Section Créneaux -->
+            <div class="card">
+                <h2>📅 Créneaux Disponibles</h2>
+                <div id="slots-list">Chargement...</div>
+            </div>
 
-        <div class="specialites" id="specialites">
-            <!-- Les spécialités seront chargées ici -->
-        </div>
+            <!-- Section Prendre RDV -->
+            <div class="card">
+                <h2>📝 Prendre Rendez-vous</h2>
+                <form id="booking-form">
+                    <div class="form-group">
+                        <label>Médecin ID (ex: doc-1)</label>
+                        <input type="text" id="doctorId" required placeholder="doc-1">
+                    </div>
+                    <div class="form-group">
+                        <label>Date/Heure</label>
+                        <input type="datetime-local" id="start_at" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Motif</label>
+                        <input type="text" id="reason" placeholder="Consultation simple">
+                    </div>
+                    <button type="submit" class="btn">Confirmer RDV (Transaction)</button>
+                </form>
+            </div>
 
-        <div class="api-info">
-            <h3 style="color: #06a77d; margin-bottom: 10px;">📡 Endpoints API disponibles:</h3>
-            <p><code>GET /api/v1/docteur</code> - Liste toutes les spécialités</p>
-            <p><code>GET /api/v1/docteur?specialite=dentiste</code> - Filtrer par spécialité</p>
-        </div>
+            <!-- Section Mes RDV -->
+            <div class="card">
+                <h2>📋 Mes Rendez-vous</h2>
+                <div id="appointments-list">Aucun RDV</div>
+            </div>
 
-        <footer>
-            <p><strong>2Bibsah</strong> - Une solution de santé pour tous, partout en Afrique et au-delà 🌍</p>
-            <p style="margin-top: 10px; font-size: 0.9em;">Développé avec ❤️ pour une santé accessible à tous</p>
-        </footer>
+            <!-- Section Notifications -->
+            <div class="card">
+                <h2>🔔 Notifications</h2>
+                <div id="notifs-list">Aucune notification</div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Charger les spécialités depuis l'API
-        fetch('/api/v1/docteur')
-            .then(response => response.json())
-            .then(data => {
-                const container = document.getElementById('specialites');
-                const specialites = data.specialites;
+        const API_URL = '/api';
+
+        // 1. Charger les slots
+        async function loadSlots() {
+            try {
+                const res = await fetch(`${API_URL}/slots`);
+                const json = await res.json();
+                const container = document.getElementById('slots-list');
                 
-                for (const [key, value] of Object.entries(specialites)) {
-                    const card = document.createElement('div');
-                    card.className = 'specialite-card';
-                    card.innerHTML = `
-                        <span class="icon">${value.icon}</span>
-                        <h3>${value.nom}</h3>
-                        <p>${value.description}</p>
-                    `;
-                    card.onclick = () => {
-                        fetch(`/api/v1/docteur?specialite=${key}`)
-                            .then(res => res.json())
-                            .then(spec => {
-                                alert(`${spec.data.nom}\n\n${spec.data.description}`);
-                            });
-                    };
-                    container.appendChild(card);
+                if (json.success && json.data.length > 0) {
+                    container.innerHTML = json.data.map(slot => `
+                        <div class="item">
+                            <div>
+                                <strong>${slot.doctor}</strong><br>
+                                ${slot.start} - ${slot.end}
+                            </div>
+                            <button class="btn" onclick="prefill('${slot.doctor}', '${slot.start}')">Choisir</button>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = 'Aucun créneau disponible';
                 }
-            })
-            .catch(error => {
-                console.error('Erreur lors du chargement des spécialités:', error);
-            });
+            } catch (e) { console.error(e); }
+        }
+
+        // 2. Charger Mes RDV
+        async function loadAppointments() {
+            try {
+                const res = await fetch(`${API_URL}/appointments/my`);
+                const json = await res.json();
+                const container = document.getElementById('appointments-list');
+                
+                if (json.success && json.data.length > 0) {
+                    container.innerHTML = json.data.map(appt => `
+                        <div class="item">
+                            <div>
+                                <strong>RDV #${appt.id}</strong><br>
+                                ${new Date(appt.start_at).toLocaleString()}
+                            </div>
+                            <span class="status ${appt.status}">${appt.status}</span>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // 3. Charger Notifications
+        async function loadNotifs() {
+            try {
+                const res = await fetch(`${API_URL}/notifications`);
+                const json = await res.json();
+                const container = document.getElementById('notifs-list');
+                
+                if (json.success && json.data.length > 0) {
+                    container.innerHTML = json.data.map(notif => `
+                        <div class="item">
+                            ${notif.content}
+                            <span class="status">${notif.status}</span>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // 4. Créer RDV
+        document.getElementById('booking-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                doctorId: document.getElementById('doctorId').value,
+                start_at: document.getElementById('start_at').value,
+                reason: document.getElementById('reason').value
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/appointments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const json = await res.json();
+                if (json.success) {
+                    alert('✅ RDV Confirmé ! ID: ' + json.data.id);
+                    loadAppointments(); // Refresh list
+                    // Add local mock logic for immediate feedback if needed
+                } else {
+                    alert('❌ Erreur: ' + json.message);
+                }
+            } catch (e) { alert('Erreur réseau'); }
+        });
+
+        // Helper
+        window.prefill = (doctor, time) => {
+            document.getElementById('doctorId').value = 'doc-1'; // Mock ID
+            // Simple date parse for demo
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('start_at').value = `${today}T${time}`;
+        };
+
+        // Init
+        loadSlots();
+        loadAppointments();
+        loadNotifs();
     </script>
 </body>
 </html>

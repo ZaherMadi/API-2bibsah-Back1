@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  role      String   // patient, doctor, admin
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  
+  appointmentsAsDoctor  Appointment[] @relation("DoctorAppointments")
+  appointmentsAsPatient Appointment[] @relation("PatientAppointments")
+  notifications         Notification[]
+  slots                 Slot[]
+}
+
+model Slot {
+  id        String   @id @default(uuid())
+  doctorId  String
+  doctor    User     @relation(fields: [doctorId], references: [id])
+  start     DateTime
+  end       DateTime
+  isBooked  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Appointment {
+  id            String   @id @default(uuid())
+  doctorId      String
+  patientId     String
+  start_at      DateTime
+  status        String   @default("pending")
+  reason        String?
+  paymentStatus String   @default("pending")
+  
+  doctor        User     @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  patient       User     @relation("PatientAppointments", fields: [patientId], references: [id])
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  prescriptions Prescription[]
+  payment       Payment?
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  content   String
+  status    String   @default("unread")
+  createdAt DateTime @default(now())
+}
+
+model Prescription {
+  id            String      @id @default(uuid())
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  content       String
+  status        String      @default("created")
+  createdAt     DateTime    @default(now())
+}
+
+model Payment {
+  id            String      @id @default(uuid())
+  appointmentId String      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  amount        Float
+  status        String
+  providerId    String?
+  createdAt     DateTime    @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  details   String?
+  entityId  String?
+  timestamp DateTime @default(now())
+}

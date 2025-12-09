@@ -8,7 +8,7 @@ const options = {
     definition: {
         openapi: '3.0.0',
         info: {
-            title: 'Microservice B - Medical Appointment Management',
+            title: '2bibsah Back 2',
             version: '1.0.0',
             description: 'API for managing medical appointments, slots, prescriptions, and payments.',
             contact: {
@@ -21,6 +21,12 @@ const options = {
                 url: 'http://localhost:3000',
                 description: 'Local server',
             },
+            {
+                url: 'https://api-2bibsah-back1.vercel.app', // Update this with your actual Vercel URL if known, or use relative
+                description: 'Production server',
+            },
+            // Alternatively, use a relative path if supported by the client, 
+            // but Swagger UI often prefers absolute. 
         ],
         components: {
             securitySchemes: {

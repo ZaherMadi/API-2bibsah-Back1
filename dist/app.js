@@ -19,12 +19,29 @@ const auth_middleware_1 = require("./middlewares/auth.middleware");
 const error_middleware_1 = require("./middlewares/error.middleware");
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
+const path_1 = __importDefault(require("path"));
 // Middleware
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
-// Swagger Documentation
-app.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_1.default));
+const publicPath = path_1.default.join(process.cwd(), 'public');
+console.log('Serving static files from:', publicPath);
+app.use(express_1.default.static(publicPath));
+// Swagger Documentation - Vercel-compatible setup using CDN assets
+const swaggerOptions = {
+    customCssUrl: "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css",
+    customJs: [
+        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.min.js"
+    ]
+};
+// For Vercel: serve swagger spec as JSON endpoint
+app.get('/api-docs/swagger.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swagger_1.default);
+});
+// Serve Swagger UI with CDN assets
+app.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_1.default, swaggerOptions));
 console.log(`Swagger Docs available at http://localhost:${PORT}/api-docs`);
 // Routes
 // Note: Auth middleware is applied globally or per route. 
@@ -44,7 +61,9 @@ app.use('/api/auditlog', audit_routes_1.default);
 app.use('/api/stats', stats_routes_1.default);
 // Root Endpoint
 app.get('/', (req, res) => {
-    res.send('2bibsah Back 2 is running. Visit /api-docs for documentation.');
+    const indexPath = path_1.default.join(process.cwd(), 'public', 'index.html');
+    console.log('Serving index.html from:', indexPath);
+    res.sendFile(indexPath);
 });
 // Error Handling Middleware (Must be last)
 app.use(error_middleware_1.errorMiddleware);
