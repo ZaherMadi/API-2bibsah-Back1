@@ -108,11 +108,11 @@ const swaggerSpec = {
         // ==================== SLOTS ====================
         '/api/slots': {
             get: {
-                summary: 'Calculate free slots',
+                summary: 'Get all available slots from all doctors',
                 tags: ['Slots'],
                 security: [{ bearerAuth: [] }],
                 responses: {
-                    '200': { description: 'List of available slots' },
+                    '200': { description: 'List of all available slots' },
                 },
             },
             post: {
@@ -130,6 +130,7 @@ const swaggerSpec = {
                                     start: { type: 'string', format: 'date-time' },
                                     end: { type: 'string', format: 'date-time' },
                                 },
+                                required: ['doctorId', 'start', 'end'],
                             },
                         },
                     },
@@ -139,26 +140,25 @@ const swaggerSpec = {
                 },
             },
         },
-        '/api/doctors/{id}/slots': {
-            post: {
-                summary: 'Define recurrence rules for slots',
+        '/api/slots/by-doctor/{doctorId}': {
+            get: {
+                summary: 'Get available slots for a specific doctor',
                 tags: ['Slots'],
                 security: [{ bearerAuth: [] }],
                 parameters: [
-                    { in: 'path', name: 'id', required: true, schema: { type: 'string' } },
+                    { in: 'path', name: 'doctorId', required: true, schema: { type: 'string' }, description: 'Doctor ID' },
                 ],
                 responses: {
-                    '201': { description: 'Slots created' },
+                    '200': { description: 'List of available slots for the doctor' },
                 },
             },
         },
-        '/api/doctors/{id}/slots/{slotId}': {
+        '/api/slots/{slotId}': {
             delete: {
                 summary: 'Delete a specific slot',
                 tags: ['Slots'],
                 security: [{ bearerAuth: [] }],
                 parameters: [
-                    { in: 'path', name: 'id', required: true, schema: { type: 'string' } },
                     { in: 'path', name: 'slotId', required: true, schema: { type: 'string' } },
                 ],
                 responses: {

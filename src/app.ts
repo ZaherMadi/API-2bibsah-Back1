@@ -57,8 +57,7 @@ console.log(`Swagger Docs available at http://localhost:${PORT}/api-docs`);
 app.use('/api', authMiddleware);
 
 app.use('/api/appointments', appointmentRoutes);
-app.use('/api/doctors/:id/slots', slotRoutes); // Specific slot routes
-app.use('/api/slots', slotRoutes); // General slot routes
+app.use('/api/slots', slotRoutes); // All slot routes (including /by-doctor/:doctorId)
 app.use('/api/prescriptions', prescriptionRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
