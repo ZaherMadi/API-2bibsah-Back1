@@ -1,0 +1,42 @@
+# Dépendances
+node_modules
+npm-debug.log
+# Note: On garde package-lock.json pour la reproductibilité des builds Docker
+
+# Variables d'environnement (seront passées via docker-compose)
+.env
+.env.local
+.env.*.local
+
+# Build
+dist
+build
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation (optionnel, peut être utile pour le contexte)
+# *.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs
+logs
+*.log
+
+# Tests
+coverage
+.nyc_output
+
+# Prisma (on garde le schéma mais pas les migrations générées)
+# prisma/migrations (gardé pour le contexte)

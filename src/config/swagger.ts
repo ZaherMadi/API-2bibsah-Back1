@@ -30,6 +30,75 @@ const options = {
                     type: 'http',
                     scheme: 'bearer',
                     bearerFormat: 'JWT',
+                    description: 'Entrez votre token JWT obtenu via /api/auth/login ou /api/auth/register',
+                },
+            },
+            schemas: {
+                User: {
+                    type: 'object',
+                    properties: {
+                        id: {
+                            type: 'string',
+                            format: 'uuid',
+                        },
+                        email: {
+                            type: 'string',
+                            format: 'email',
+                        },
+                        firstName: {
+                            type: 'string',
+                        },
+                        lastName: {
+                            type: 'string',
+                        },
+                        role: {
+                            type: 'string',
+                            enum: ['PATIENT', 'DOCTOR', 'ADMIN'],
+                        },
+                        phone: {
+                            type: 'string',
+                            nullable: true,
+                        },
+                    },
+                },
+                AuthResponse: {
+                    type: 'object',
+                    properties: {
+                        success: {
+                            type: 'boolean',
+                        },
+                        message: {
+                            type: 'string',
+                        },
+                        data: {
+                            type: 'object',
+                            properties: {
+                                user: {
+                                    $ref: '#/components/schemas/User',
+                                },
+                                token: {
+                                    type: 'string',
+                                    description: 'Token JWT à utiliser dans le header Authorization',
+                                },
+                            },
+                        },
+                    },
+                },
+                ErrorResponse: {
+                    type: 'object',
+                    properties: {
+                        success: {
+                            type: 'boolean',
+                            example: false,
+                        },
+                        error: {
+                            type: 'string',
+                        },
+                        code: {
+                            type: 'string',
+                            nullable: true,
+                        },
+                    },
                 },
             },
         },
