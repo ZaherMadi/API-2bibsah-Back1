@@ -1,87 +1,196 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
+// ============================================
+// MODÈLES DE BASE DE DONNÉES
+// ============================================
+
+// Modèle User : représente tous les utilisateurs (patients, médecins, admins)
 model User {
   id        String   @id @default(uuid())
-  role      String   // patient, doctor, admin
-  name      String
   email     String   @unique
-  createdAt DateTime @default(now())
-  
-  appointmentsAsDoctor  Appointment[] @relation("DoctorAppointments")
-  appointmentsAsPatient Appointment[] @relation("PatientAppointments")
-  notifications         Notification[]
-  slots                 Slot[]
+  password  String   // Hash bcrypt, jamais en clair
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  role      UserRole @default(PATIENT)
+  phone     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  appointments Appointment[]
+  auditLogs    AuditLog[]
+  notifications Notification[]
+
+  @@map("users")
 }
 
+// Enum pour les rôles utilisateur
+enum UserRole {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+// Modèle Doctor : informations spécifiques aux médecins
+model Doctor {
+  id          String  @id @default(uuid())
+  userId      String  @unique @map("user_id") // Relation avec User
+  specialty   String
+  price       Decimal @db.Decimal(10, 2) // Prix de consultation
+  city        String
+  verified    Boolean @default(false)
+  rating      Float?  @default(0)
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  slots        Slot[]
+  appointments Appointment[]
+
+  @@map("doctors")
+}
+
+// Modèle Slot : créneaux de disponibilité des médecins
 model Slot {
-  id        String   @id @default(uuid())
-  doctorId  String
-  doctor    User     @relation(fields: [doctorId], references: [id])
-  start     DateTime
-  end       DateTime
-  isBooked  Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  doctorId    String   @map("doctor_id")
+  startAt     DateTime @map("start_at")
+  endAt       DateTime @map("end_at")
+  isAvailable Boolean  @default(true) @map("is_available")
+  isLocked    Boolean  @default(false) @map("is_locked") // Pour les transactions
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  doctor      Doctor       @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  appointment Appointment?
+
+  @@unique([doctorId, startAt]) // Un médecin ne peut pas avoir deux slots au même moment
+  @@map("slots")
 }
 
+// Modèle Appointment : rendez-vous médicaux
 model Appointment {
-  id            String   @id @default(uuid())
-  doctorId      String
-  patientId     String
-  start_at      DateTime
-  status        String   @default("pending")
-  reason        String?
-  paymentStatus String   @default("pending")
-  
-  doctor        User     @relation("DoctorAppointments", fields: [doctorId], references: [id])
-  patient       User     @relation("PatientAppointments", fields: [patientId], references: [id])
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  prescriptions Prescription[]
-  payment       Payment?
+  id          String            @id @default(uuid())
+  userId      String            @map("user_id")
+  doctorId    String            @map("doctor_id")
+  slotId      String            @unique @map("slot_id")
+  reason      String?
+  status      AppointmentStatus @default(PENDING)
+  startAt     DateTime          @map("start_at")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  doctor      Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  slot        Slot     @relation(fields: [slotId], references: [id])
+  payment     Payment?
+  prescription Prescription?
+
+  @@map("appointments")
 }
 
+// Enum pour les statuts de rendez-vous
+enum AppointmentStatus {
+  PENDING   // En attente de paiement
+  CONFIRMED // Confirmé
+  CANCELLED // Annulé
+  DONE      // Terminé
+  NO_SHOW   // Patient absent
+  FAILED    // Échec (paiement, etc.)
+}
+
+// Modèle Payment : gestion des paiements
+model Payment {
+  id            String        @id @default(uuid())
+  appointmentId String        @unique @map("appointment_id")
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("XOF") // Franc CFA pour l'Afrique
+  status        PaymentStatus @default(PENDING)
+  provider      String?       // Stripe, Wave, Orange Money, etc.
+  providerId    String?       @map("provider_id") // ID externe du provider
+  metadata      Json?         // Données supplémentaires du provider
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+// Modèle Prescription : prescriptions médicales
+model Prescription {
+  id            String             @id @default(uuid())
+  appointmentId String             @unique @map("appointment_id")
+  medications   Json // Array de médicaments
+  instructions  String?
+  status        PrescriptionStatus @default(ISSUED)
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  // Relations
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@map("prescriptions")
+}
+
+enum PrescriptionStatus {
+  ISSUED    // Émise
+  DISPENSED // Délivrée en pharmacie
+}
+
+// Modèle Notification : notifications envoyées aux utilisateurs
 model Notification {
   id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  type      String
-  content   String
-  status    String   @default("unread")
-  createdAt DateTime @default(now())
+  userId    String   @map("user_id")
+  type      String   // email, sms, push
+  title     String
+  message   String
+  isRead    Boolean  @default(false) @map("is_read")
+  metadata  Json?    // Données supplémentaires
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
 }
 
-model Prescription {
-  id            String      @id @default(uuid())
-  appointmentId String
-  appointment   Appointment @relation(fields: [appointmentId], references: [id])
-  content       String
-  status        String      @default("created")
-  createdAt     DateTime    @default(now())
-}
-
-model Payment {
-  id            String      @id @default(uuid())
-  appointmentId String      @unique
-  appointment   Appointment @relation(fields: [appointmentId], references: [id])
-  amount        Float
-  status        String
-  providerId    String?
-  createdAt     DateTime    @default(now())
-}
-
+// Modèle AuditLog : logs d'audit pour la conformité
 model AuditLog {
   id        String   @id @default(uuid())
-  action    String
-  details   String?
-  entityId  String?
-  timestamp DateTime @default(now())
+  userId    String?  @map("user_id")
+  action    String   // create_appointment, cancel_appointment, etc.
+  resource  String   // appointments, payments, etc.
+  resourceId String? @map("resource_id")
+  metadata  Json?    // Données supplémentaires
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
 }

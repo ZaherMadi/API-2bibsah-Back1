@@ -1,41 +1,60 @@
+/**
+ * Middleware d'authentification JWT
+ * 
+ * Vérifie le token JWT dans le header Authorization
+ * et injecte l'utilisateur dans req.user
+ */
+
 import { Request, Response, NextFunction } from 'express';
+import jwtService from '../services/jwt.service';
+import { prisma } from '../config/database';
+import { UnauthorizedError } from '../utils/errors';
+import { logger } from '../utils/logger';
 
-// Extend Request type to include user
-declare global {
-    namespace Express {
-        interface Request {
-            user?: {
-                id: string;
-                role: string;
-            };
+export const authMiddleware = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        // Extraire le token depuis le header Authorization
+        const authHeader = req.headers.authorization;
+        
+        if (!authHeader) {
+            throw new UnauthorizedError('Token d\'authentification manquant');
         }
-    }
-}
 
-export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-    const authHeader = req.headers.authorization;
+        // Extraire et vérifier le token
+        const token = jwtService.extractTokenFromHeader(authHeader);
+        const decoded = jwtService.verifyToken(token);
 
-    if (!authHeader) {
-        // For development simplicity, if no header, we can mock a user or return 401
-        // let's return 401 to be strict, but maybe allow a bypass for testing if needed
-        // res.status(401).json({ message: 'No token provided' });
-        // return;
+        // Récupérer l'utilisateur depuis la base de données
+        const user = await prisma.user.findUnique({
+            where: { id: decoded.userId },
+            select: {
+                id: true,
+                email: true,
+                role: true,
+                firstName: true,
+                lastName: true,
+            },
+        });
 
-        // MOCKING USER FOR NOW
-        req.user = { id: 'mock-user-id', role: 'patient' };
+        if (!user) {
+            throw new UnauthorizedError('Utilisateur non trouvé');
+        }
+
+        // Injecter l'utilisateur dans la requête
+        req.user = user;
         next();
-        return;
-    }
+    } catch (error) {
+        // Si c'est déjà une AppError, la passer au middleware d'erreur
+        if (error instanceof UnauthorizedError) {
+            return next(error);
+        }
 
-    // Simulate JWT decoding
-    const token = authHeader.split(' ')[1];
-    if (token === 'admin-token') {
-        req.user = { id: 'admin-id', role: 'admin' };
-    } else if (token === 'doctor-token') {
-        req.user = { id: 'doctor-id', role: 'doctor' };
-    } else {
-        req.user = { id: 'patient-id', role: 'patient' };
+        // Sinon, logger l'erreur et retourner une erreur générique
+        logger.error('Erreur dans authMiddleware', error as Error);
+        next(new UnauthorizedError('Erreur d\'authentification'));
     }
-
-    next();
 };
